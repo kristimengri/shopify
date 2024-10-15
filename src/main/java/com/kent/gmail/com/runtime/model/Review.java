@@ -23,8 +23,7 @@ public class Review extends Base {
     return this.reviewProducts;
   }
 
-  @ManyToOne
-  @JoinColumn(name = "order_id")
+  @ManyToOne(targetEntity = Order.class)
   private Order order;
 
   /**
