@@ -1,0 +1,41 @@
+version: "3"
+services:
+  server:
+    build:
+      context: .
+    ports:
+      - "${SERVER_PORT}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:${POSTGRESQL_PORT}/${POSTGRESQL_DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRESQL_USER}
+      POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
+      POSTGRES_DB: ${POSTGRESQL_DB_NAME}
+      ports: ${POSTGRESQL_PORT}:5432
+
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-q",
+          "-d",
+          "${POSTGRESQL_DB_NAME}",
+          "-U",
+          "${POSTGRESQL_USER}",
+        ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+
+volumes:
+  postgres: ~

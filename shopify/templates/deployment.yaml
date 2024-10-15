@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: {{ if .Values.volumes }}StatefulSet{{ else }}Deployment{{ end }}
+metadata:
+  name: {{ include "shopify.fullname" . }}
+  labels:
+    {{- include "shopify.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "shopify.selectorLabels" . | nindent 6 }}
+{{ if .Values.volumes }}
+  serviceName: {{ include "shopify.fullname" . }}-service
+{{ end }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "shopify.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "shopify.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+{{- range .Values.ports }}
+            - name: {{ .name | quote }}
+              containerPort: {{ .targetPort }}
+              protocol: TCP
+{{- end }}
+{{- if .Values.probes }}
+          probes:
+{{ toYaml .Values.probes | indent 10 }}
+{{- end }}
+{{- if .Values.env }}
+          env:
+{{ toYaml .Values.env | indent 10 }}
+{{- end }}
+{{- if .Values.resources }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+{{- end }}
+          {{- if .Values.volumes }}
+          volumeMounts:
+          {{- range .Values.volumes }}
+          - mountPath: {{ .path }}
+            name: {{ .name }}
+          {{- end }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- if .Values.volumes }}
+  volumeClaimTemplates:
+{{- range .Values.volumes }}
+  - metadata:
+      name: {{ .name }}
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ .size }}
+      storageClassName: hcloud-volumes
+{{- end }}
+{{- end }}
