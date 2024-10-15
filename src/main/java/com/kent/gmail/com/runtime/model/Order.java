@@ -9,7 +9,5 @@ import java.util.List;
 @Entity
 public class Order extends Base {
 
-    @OneToMany(targetEntity = Review.class, mappedBy = "order")
-    @JsonIgnore
-    private List<Review> reviews;
+
 }
