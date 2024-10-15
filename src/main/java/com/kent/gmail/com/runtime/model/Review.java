@@ -2,6 +2,8 @@ package com.kent.gmail.com.runtime.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import java.util.List;
 
@@ -20,6 +22,10 @@ public class Review extends Base {
   public List<Product> getReviewProducts() {
     return this.reviewProducts;
   }
+
+  @ManyToOne
+  @JoinColumn(name = "order_id")
+  private Order order;
 
   /**
    * @param reviewProducts reviewProducts to set
